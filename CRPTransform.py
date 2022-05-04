@@ -4,8 +4,7 @@ def NoTransform(challenges, key):
     return challenges, key
 
 def XorKeyTransform(challenges, key):
-    arrayed_key = [bit for bit in bin(key)[2:]] # num to binary string to list with 0b cut off
-    arrayed_key = [-1 if bit == '0' else 1 for bit in arrayed_key] # '0' -> -1, '1' -> 1
+    arrayed_key = [-1 if bit == '0' else 1 for bit in bin(key)[2:]] # '0' -> -1, '1' -> 1, 0b cut off
     return array([[ 1 if challenge[i] != arrayed_key[i] else -1 
         for i in range(len(arrayed_key))] for challenge in challenges]), key # return the xor
 

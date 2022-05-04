@@ -184,7 +184,7 @@ class MLPAttack2021(OfflineAttack):
             callbacks=[self.EarlyStopCallback(self.early_stop, self.patience)],
             shuffle=True,
             validation_split=0.01,
-            verbose=0
+            verbose=1
         ).history
 
         # create pypuf model

@@ -1,30 +1,59 @@
 from os import environ
 environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import matplotlib.pyplot as plt
 
 from attacker import Attacker
 from CRPTransform import NoTransform, XorKeyTransform, TFFWithResetTransform, ElipticCurveTransform
 
+CRPNUMS = [100, 1000, 10000, 50000, 100000, 250000, 500000]
+
 def main():
-    notf_attacker = Attacker(NoTransform, N=500000, n=64, k=5)
-    notf_attacker.fit_attack()
-    print("no transform attack similarity:", notf_attacker.attack_similarity())
-    print("no transform attack accuracy:", notf_attacker.attack_accuracy())
-    print("no transform attack entropy:", notf_attacker.transform_entropy())
+    notf_accuracies = []
+    for N in CRPNUMS:
+        notf_attacker = Attacker(NoTransform, N=N, n=64, k=5)
+        notf_attacker.fit_attack()
+        notf_accuracies.append(notf_attacker.attack_accuracy())
+        
+    xor_accuracies = []
+    for N in CRPNUMS:
+        xor_key_attacker = Attacker(XorKeyTransform, key=0xfedcba0987654321, N=N, n=64, k=5)
+        xor_key_attacker.fit_attack()
+        xor_accuracies.append(xor_key_attacker.attack_accuracy())
+    
+    tf_accuracies = []
+    for N in CRPNUMS:
+        tff_attacker = Attacker(TFFWithResetTransform, key=[0] * 64, N=N, n=64, k=5)
+        tff_attacker.fit_attack()
+        tf_accuracies.append(tff_attacker.attack_accuracy())
 
-    xor_key_attacker = Attacker(XorKeyTransform, key=0x9284758302857311, N=500000, n=64, k=5)
-    xor_key_attacker.fit_attack()
-    print("xor key transform attack similarity:", xor_key_attacker.attack_similarity())
-    print("xor key transform attack accuracy:", xor_key_attacker.attack_accuracy())
-    print("xor key transform attack entropy:", xor_key_attacker.transform_entropy())
+    plot_accuracies(notf_accuracies, xor_accuracies, tf_accuracies)
 
-    tff_attacker = Attacker(TFFWithResetTransform, key=[0] * 64, N=500000, n=64, k=5)
-    tff_attacker.fit_attack()
-    print("tff with reset transform attack similarity:", tff_attacker.attack_similarity())
-    print("tff with reset transform attack accuracy:", tff_attacker.attack_accuracy())
-    print("tff with reset transform attack entropy:", tff_attacker.transform_entropy())
+    notf_entropy = notf_attacker.transform_entropy()
+    xor_entropy = xor_key_attacker.transform_entropy()
+    tf_entropy = tff_attacker.transform_entropy()
+
+    plot_entropies(notf_entropy, xor_entropy, tf_entropy)
 
     print("TODO: ELIPTIC CURVE ATTACKS")
 
+def plot_accuracies(notf_accuracies, xor_accuracies, tf_accuracies):
+    print("accuracies:", notf_accuracies, xor_accuracies, tf_accuracies)
+    plt.plot(notf_accuracies, label="No Transform")
+    plt.plot(xor_accuracies, label="Xor Key")
+    plt.plot(tf_accuracies, label="TFF With Reset")
+    plt.xticks(list(range(len(CRPNUMS))), CRPNUMS)
+    plt.xlabel("Number of CRPs")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.savefig("figs/accuracies.png")
+    plt.clf()
+
+def plot_entropies(notf_entropy, xor_entropy, tf_entropy):
+    print("entropies:", notf_entropy, xor_entropy, tf_entropy)
+    plt.bar(["No Transform", "Xor Key", "TFF With Reset"], [notf_entropy, xor_entropy, tf_entropy])
+    plt.legend()
+    plt.savefig("figs/entropies.png")
+    plt.clf()
 
 if __name__ == "__main__":
     main()
